@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mentorable Tic Tac Toe</title>
+<!-- Import Roboto from Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        background: url('images/mentorable.jpg') no-repeat center center fixed;
+        background-size: cover;
+        font-family: 'Roboto', sans-serif; /* Apply Roboto globally */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center; /* Center vertically */
+        height: 100vh;
+        margin: 0;
+        color: #FFFFFF;
+        position: relative;
+    }
+    body::before {
+        content: "";
+        position: absolute;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        background: rgba(0,0,0,0.4);
+        z-index:0;
+    }
+    h1 {
+        color: #FFF;
+        font-size: 28px; 
+        letter-spacing: 1.5px;
+        margin-bottom: 20px;
+        text-align: center;
+        z-index:1;
+        position: relative;
+        font-weight: 700;
+        font-family: 'Roboto', sans-serif;
+    }
+    .board {
+        display: grid;
+        grid-template-columns: repeat(3, 120px);
+        grid-template-rows: repeat(3, 120px);
+        gap: 8px;
+        z-index:1;
+        position: relative;
+        margin-bottom: 20px;
+        font-family: 'Roboto', sans-serif;
+    }
+    .cell {
+        background: linear-gradient(145deg, #2E8B57, #00FF7F);
+        border: 4px solid #006400;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 60px;
+        font-weight: 700;
+        color: #FFFFFF;
+        cursor: pointer;
+        border-radius: 10px;
+        transition: 0.2s;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        font-family: 'Roboto', sans-serif;
+    }
+    .cell:hover {
+        background: linear-gradient(145deg, #00FF7F, #2E8B57);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+    }
+    #message {
+        color: #FFFFFF;
+        font-size: 20px;
+        margin-bottom: 20px;
+        height: 28px;
+        z-index:1;
+        position: relative;
+        font-family: 'Roboto', sans-serif;
+    }
+    #restart {
+        padding: 15px 30px;
+        background-color: #009400;
+        color: #FFFFFF;
+        border: none;
+        cursor: pointer;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 18px;
+        transition: 0.2s;
+        z-index:1;
+        position: relative;
+        font-family: 'Roboto', sans-serif;
+    }
+    #restart:hover {
+        background-color: #228B22;
+    }
+
+    /* Mobile adjustments */
+    @media(max-width:500px){
+        .board {
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 6px;
+        }
+        .cell {
+            font-size: 48px;
+        }
+        #restart {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+    }
+</style>
+</head>
+<body>
+<h1>MENTORABLE TIC TAC TOE</h1>
+
+<div id="message"></div>
+
+<div class="board" id="board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+</div>
+
+<button id="restart">Restart</button>
+
+<script>
+let board = ["","","","","","","","",""];
+let cells = document.querySelectorAll('.cell');
+let messageEl = document.getElementById('message');
+let gameOver = false;
+
+// Check winner
+function checkWinner(b, player) {
+    const combos = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+    ];
+    return combos.some(combo => combo.every(i => b[i] === player));
+}
+
+// Minimax for unbeatable AI
+function minimax(b, isMax) {
+    if (checkWinner(b, "O")) return 1;
+    if (checkWinner(b, "X")) return -1;
+    if (!b.includes("")) return 0;
+
+    if (isMax) {
+        let best = -Infinity;
+        for (let i=0;i<9;i++) {
+            if(b[i]===""){
+                b[i]="O";
+                best = Math.max(best,minimax(b,false));
+                b[i]="";
+            }
+        }
+        return best;
+    } else {
+        let best = Infinity;
+        for (let i=0;i<9;i++) {
+            if(b[i]===""){
+                b[i]="X";
+                best = Math.min(best,minimax(b,true));
+                b[i]="";
+            }
+        }
+        return best;
+    }
+}
+
+// AI move
+function aiMove() {
+    if(gameOver) return;
+    let bestScore = -Infinity;
+    let idx;
+    for(let i=0;i<9;i++){
+        if(board[i]===""){
+            board[i]="O";
+            let score = minimax(board,false);
+            board[i]="";
+            if(score>bestScore){
+                bestScore=score;
+                idx=i;
+            }
+        }
+    }
+    board[idx]="O";
+    updateBoard();
+    checkGameOver("O");
+}
+
+// Update UI
+function updateBoard(){
+    cells.forEach((cell,i)=>cell.textContent=board[i]);
+}
+
+// Check if game over and display message
+function checkGameOver(player){
+    if(checkWinner(board, player)){
+        messageEl.textContent = (player === "X") ? "You win!" : "AI wins!";
+        gameOver = true;
+    } else if(!board.includes("")){
+        messageEl.textContent = "It's a tie!";
+        gameOver = true;
+    }
+}
+
+// Player move
+cells.forEach(cell=>{
+    cell.addEventListener('click',()=>{
+        let idx = cell.dataset.index;
+        if(board[idx]==="" && !gameOver){
+            board[idx]="X";
+            updateBoard();
+            checkGameOver("X");
+            if(!gameOver){
+                setTimeout(aiMove,200);
+            }
+        }
+    });
+});
+
+// Restart button
+document.getElementById('restart').addEventListener('click', resetBoard);
+
+// Reset board function
+function resetBoard(){
+    board=["","","","","","","","",""];
+    updateBoard();
+    messageEl.textContent = "";
+    gameOver = false;
+}
+</script>
+</body>
+</html>
